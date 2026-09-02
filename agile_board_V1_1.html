@@ -299,7 +299,7 @@
     </div>
 
     <div class="sidebar-footer">
-      Data lives in this browser tab only. Use <b>Export Excel</b> to save your board, and <b>Import Excel</b> to bring it back later.
+      Data lives in this browser tab only. New here? Grab the <b>Sample Template</b> first, fill it in, then use <b>Import Excel</b>. Use <b>Export Excel</b> any time to save your board.
     </div>
   </aside>
 
@@ -311,6 +311,10 @@
         <input type="text" id="search-input" placeholder="Search issues...">
       </div>
       <div class="spacer"></div>
+      <button class="btn" id="btn-template">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M9 15h6"/><path d="M9 11h6"/></svg>
+        Sample Template
+      </button>
       <button class="btn" id="btn-import">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M4 21h16"/></svg>
         Import Excel
@@ -820,6 +824,40 @@
     showToast(`Exported ${rows.length} issues`);
   }
 
+  function downloadSampleTemplate(){
+    const sample = [
+      {Key:"NIM-1", Type:"Epic", Title:"Checkout redesign", Description:"Overhaul the checkout flow to cut drop-off.", Status:"In Progress", Priority:"High", Assignee:"Priya Patel", "Story Points":"", "Parent Key":"", "Due Date":"2026-09-30"},
+      {Key:"NIM-2", Type:"Story", Title:"As a shopper, I can pay with a saved card", Description:"Let returning customers reuse a stored payment method.", Status:"To Do", Priority:"High", Assignee:"Sam Lee", "Story Points":5, "Parent Key":"NIM-1", "Due Date":"2026-09-12"},
+      {Key:"NIM-3", Type:"Task", Title:"Build saved-card selection UI", Description:"Dropdown + add-new-card option on the payment step.", Status:"To Do", Priority:"Medium", Assignee:"Sam Lee", "Story Points":3, "Parent Key":"NIM-2", "Due Date":"2026-09-08"},
+      {Key:"NIM-4", Type:"Sub-task", Title:"Write unit tests for card selector", Description:"", Status:"Backlog", Priority:"Low", Assignee:"Unassigned", "Story Points":1, "Parent Key":"NIM-3", "Due Date":""},
+      {Key:"NIM-5", Type:"Bug", Title:"Totals flicker when promo code applied", Description:"Price recalculates twice, causing a visible jump.", Status:"In Review", Priority:"Highest", Assignee:"Diego Ramirez", "Story Points":2, "Parent Key":"NIM-1", "Due Date":"2026-09-05"},
+      {Key:"", Type:"Task", Title:"(example) leave Key blank to auto-generate one", Description:"Delete this row before importing your real data.", Status:"Backlog", Priority:"Medium", Assignee:"Unassigned", "Story Points":"", "Parent Key":"", "Due Date":""}
+    ];
+    const ws = XLSX.utils.json_to_sheet(sample);
+    ws["!cols"] = [{wch:9},{wch:9},{wch:38},{wch:44},{wch:12},{wch:9},{wch:14},{wch:11},{wch:11},{wch:11}];
+
+    const instructions = [
+      {Field:"Key", "Allowed values / notes":"Optional. Leave blank to auto-generate. If it matches an existing issue's Key, that issue is updated instead of duplicated."},
+      {Field:"Type", "Allowed values / notes":TYPES.join(", ")},
+      {Field:"Title", "Allowed values / notes":"Required. Any text."},
+      {Field:"Description", "Allowed values / notes":"Optional. Any text."},
+      {Field:"Status", "Allowed values / notes":STATUSES.map(s=>s.label).join(", ")},
+      {Field:"Priority", "Allowed values / notes":PRIORITIES.join(", ")},
+      {Field:"Assignee", "Allowed values / notes":ASSIGNEES.join(", ") + " (or type any other name)"},
+      {Field:"Story Points", "Allowed values / notes":"Optional. Whole number."},
+      {Field:"Parent Key", "Allowed values / notes":"Optional. Must match another row's Key (e.g. a Story's Parent Key = its Epic's Key)."},
+      {Field:"Due Date", "Allowed values / notes":"Optional. Format YYYY-MM-DD."}
+    ];
+    const wsInfo = XLSX.utils.json_to_sheet(instructions);
+    wsInfo["!cols"] = [{wch:14},{wch:70}];
+
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Issues");
+    XLSX.utils.book_append_sheet(wb, wsInfo, "Instructions");
+    XLSX.writeFile(wb, "nimbus-sample-template.xlsx");
+    showToast("Sample template downloaded");
+  }
+
   function statusIdFromLabel(label){
     const found = STATUSES.find(s=> s.label.toLowerCase()===String(label||"").trim().toLowerCase());
     return found ? found.id : "todo";
@@ -891,6 +929,7 @@
     document.getElementById("modal-overlay").addEventListener("click", (e)=>{ if(e.target.id==="modal-overlay") closeModal(); });
     document.addEventListener("keydown", (e)=>{ if(e.key==="Escape" && !document.getElementById("modal-overlay").classList.contains("hidden")) closeModal(); });
 
+    document.getElementById("btn-template").addEventListener("click", downloadSampleTemplate);
     document.getElementById("btn-export").addEventListener("click", exportExcel);
     document.getElementById("btn-import").addEventListener("click", ()=> document.getElementById("import-file-input").click());
     document.getElementById("import-file-input").addEventListener("change", (e)=>{
