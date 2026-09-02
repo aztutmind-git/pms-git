@@ -450,12 +450,19 @@
   let filters = {type:"all", assignee:"all", search:""};
   let dragIssueId = null;
 
+  function uid(){
+    if(window.crypto && typeof crypto.randomUUID === "function"){
+      try { return crypto.randomUUID(); } catch(e){ /* fall through */ }
+    }
+    return "id-" + Date.now().toString(36) + "-" + Math.random().toString(36).slice(2, 10);
+  }
+
   function newKey(){ return KEY_PREFIX + "-" + (nextNum++); }
 
   function seed(){
     const mk = (type, title, opts) => {
       const o = Object.assign({
-        id: crypto.randomUUID(),
+        id: uid(),
         key: newKey(),
         type: type,
         title: title,
@@ -780,7 +787,7 @@
       Object.assign(issue, data);
       showToast(`${issue.key} updated`);
     } else {
-      const issue = Object.assign({id:crypto.randomUUID(), key:newKey()}, data);
+      const issue = Object.assign({id:uid(), key:newKey()}, data);
       issues.push(issue);
       showToast(`${issue.key} created`);
     }
@@ -894,7 +901,7 @@
             updated++;
           } else {
             const finalKey = key || newKey();
-            issues.push(Object.assign({id:crypto.randomUUID(), key:finalKey}, payload));
+            issues.push(Object.assign({id:uid(), key:finalKey}, payload));
             const num = parseInt(finalKey.split("-").pop());
             if(!isNaN(num) && num >= nextNum) nextNum = num + 1;
             created++;
