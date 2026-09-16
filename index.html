@@ -1,16 +1,379 @@
 <!DOCTYPE html>
-<html>
+
+<html lang="en">
 <head>
-    <title>Welcome to AztutMind Project Management Service</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+```
+<title>AztutMind | Project Management Service</title>
+
+<!-- Google Font -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+<!-- Font Awesome -->
+<link rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+<style>
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+    }
+
+    body {
+        font-family: "Poppins", sans-serif;
+        min-height: 100vh;
+        background:
+            radial-gradient(circle at top left, rgba(90, 120, 255, 0.18), transparent 35%),
+            radial-gradient(circle at bottom right, rgba(0, 200, 180, 0.14), transparent 35%),
+            linear-gradient(135deg, #f6f8ff, #eef2ff);
+
+        color: #172033;
+        display: flex;
+        flex-direction: column;
+    }
+
+    /* Header */
+
+    header {
+        width: 100%;
+        padding: 22px 7%;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    .logo {
+        font-size: 26px;
+        font-weight: 800;
+        letter-spacing: -1px;
+        color: #172033;
+    }
+
+    .logo span {
+        color: #5b5ff0;
+    }
+
+    .service-label {
+        font-size: 13px;
+        font-weight: 500;
+        color: #697386;
+        background: rgba(255,255,255,0.7);
+        padding: 8px 16px;
+        border-radius: 30px;
+        border: 1px solid rgba(255,255,255,0.8);
+    }
+
+    /* Main */
+
+    main {
+        flex: 1;
+        width: 100%;
+        max-width: 1200px;
+        margin: auto;
+        padding: 50px 7% 80px;
+    }
+
+    .hero {
+        text-align: center;
+        max-width: 800px;
+        margin: 0 auto 55px;
+    }
+
+    .hero-icon {
+        width: 75px;
+        height: 75px;
+        margin: 0 auto 25px;
+
+        display: flex;
+        align-items: center;
+        justify-content: center;
+
+        border-radius: 22px;
+
+        background: linear-gradient(135deg, #5b5ff0, #777cf7);
+        color: white;
+
+        font-size: 31px;
+
+        box-shadow: 0 15px 35px rgba(91, 95, 240, 0.25);
+    }
+
+    .hero h1 {
+        font-size: clamp(34px, 5vw, 54px);
+        line-height: 1.15;
+        margin-bottom: 18px;
+        letter-spacing: -1.5px;
+    }
+
+    .hero h1 span {
+        color: #5b5ff0;
+    }
+
+    .hero p {
+        color: #687287;
+        font-size: 16px;
+        line-height: 1.8;
+        max-width: 680px;
+        margin: auto;
+    }
+
+    /* Cards */
+
+    .services {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 28px;
+        max-width: 900px;
+        margin: auto;
+    }
+
+    .service-card {
+        position: relative;
+        overflow: hidden;
+
+        background: rgba(255,255,255,0.82);
+        backdrop-filter: blur(15px);
+
+        border: 1px solid rgba(255,255,255,0.9);
+        border-radius: 26px;
+
+        padding: 38px;
+
+        box-shadow:
+            0 15px 40px rgba(40, 50, 90, 0.08);
+
+        transition:
+            transform 0.3s ease,
+            box-shadow 0.3s ease;
+    }
+
+    .service-card::before {
+        content: "";
+        position: absolute;
+        width: 150px;
+        height: 150px;
+        border-radius: 50%;
+
+        background: rgba(91,95,240,0.07);
+
+        top: -70px;
+        right: -70px;
+    }
+
+    .service-card:hover {
+        transform: translateY(-8px);
+        box-shadow:
+            0 25px 55px rgba(40, 50, 90, 0.14);
+    }
+
+    .card-icon {
+        width: 62px;
+        height: 62px;
+
+        display: flex;
+        align-items: center;
+        justify-content: center;
+
+        border-radius: 18px;
+
+        background: #eef0ff;
+        color: #5b5ff0;
+
+        font-size: 25px;
+
+        margin-bottom: 25px;
+    }
+
+    .service-card h2 {
+        font-size: 23px;
+        margin-bottom: 12px;
+    }
+
+    .service-card p {
+        color: #70798c;
+        font-size: 14px;
+        line-height: 1.7;
+        min-height: 70px;
+    }
+
+    .launch-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+
+        margin-top: 25px;
+
+        padding: 13px 22px;
+
+        border-radius: 12px;
+
+        text-decoration: none;
+
+        background: #5b5ff0;
+        color: white;
+
+        font-size: 14px;
+        font-weight: 600;
+
+        transition: all 0.25s ease;
+    }
+
+    .launch-btn:hover {
+        background: #474bd8;
+        transform: translateX(3px);
+    }
+
+    /* Footer */
+
+    footer {
+        text-align: center;
+        padding: 25px;
+
+        color: #8a92a5;
+        font-size: 12px;
+    }
+
+    /* Mobile */
+
+    @media (max-width: 700px) {
+
+        header {
+            padding: 20px 5%;
+        }
+
+        .service-label {
+            display: none;
+        }
+
+        main {
+            padding: 40px 5% 60px;
+        }
+
+        .hero {
+            margin-bottom: 40px;
+        }
+
+        .hero h1 {
+            font-size: 35px;
+        }
+
+        .hero p {
+            font-size: 14px;
+        }
+
+        .services {
+            grid-template-columns: 1fr;
+        }
+
+        .service-card {
+            padding: 30px;
+        }
+    }
+</style>
+```
+
 </head>
+
 <body>
 
-	<button onclick="window.location.href='agile-board_V1_2.html'">
-    		Agile Board
-	</button>
-	<button onclick="window.location.href='pms-atlas.html'">
-    		Project Management AtLas
-	</button>
+<header>
+
+```
+<div class="logo">
+    <span>AZ</span>TUTMIND
+</div>
+
+<div class="service-label">
+    Project Management Service
+</div>
+```
+
+</header>
+
+<main>
+
+```
+<section class="hero">
+
+    <div class="hero-icon">
+        <i class="fa-solid fa-diagram-project"></i>
+    </div>
+
+    <h1>
+        Project Management <span>Made Simple</span>
+    </h1>
+
+    <p>
+        Plan, organize, track and manage your projects with
+        powerful tools designed to help teams work smarter
+        and deliver projects with clarity.
+    </p>
+
+</section>
+
+
+<section class="services">
+
+    <!-- Agile Board -->
+
+    <div class="service-card">
+
+        <div class="card-icon">
+            <i class="fa-solid fa-table-columns"></i>
+        </div>
+
+        <h2>Agile Board</h2>
+
+        <p>
+            Visualize your workflow, organize tasks, track progress
+            and manage your team's work using an intuitive Agile
+            project board.
+        </p>
+
+        <a href="agile-board_V1_2.html" class="launch-btn">
+            Open Agile Board
+            <i class="fa-solid fa-arrow-right"></i>
+        </a>
+
+    </div>
+
+
+    <!-- Project Management Atlas -->
+
+    <div class="service-card">
+
+        <div class="card-icon">
+            <i class="fa-solid fa-compass"></i>
+        </div>
+
+        <h2>Project Management Atlas</h2>
+
+        <p>
+            Explore project management concepts, frameworks,
+            processes and tools through an interactive project
+            management knowledge system.
+        </p>
+
+        <a href="pms-atlas.html" class="launch-btn">
+            Open PM Atlas
+            <i class="fa-solid fa-arrow-right"></i>
+        </a>
+
+    </div>
+
+</section>
+```
+
+</main>
+
+<footer>
+    © 2026 AztutMind · Project Management Service
+</footer>
 
 </body>
 </html>
