@@ -1,0 +1,811 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Strategy Atlas</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#0A1B2A;
+    --ink-2:#0F2740;
+    --ink-3:#163A57;
+    --ink-4:#1D4A6E;
+    --line:#3E7A8C;
+    --line-soft:rgba(127,209,222,0.16);
+    --line-soft-2:rgba(127,209,222,0.28);
+    --cyan:#7FD1DE;
+    --cyan-dim:#4FA6B8;
+    --paper:#EAF3F6;
+    --paper-dim:#9FB9C4;
+    --amber:#E8A33D;
+    --coral:#E2664B;
+    --green:#6FBF8B;
+    --font-display:'Space Mono', monospace;
+    --font-body:'Inter', sans-serif;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;height:100%;}
+  body{
+    background:
+      repeating-linear-gradient(0deg, var(--line-soft) 0px, var(--line-soft) 1px, transparent 1px, transparent 32px),
+      repeating-linear-gradient(90deg, var(--line-soft) 0px, var(--line-soft) 1px, transparent 1px, transparent 32px),
+      radial-gradient(ellipse at 20% -10%, #133153 0%, var(--ink) 55%);
+    color:var(--paper);
+    font-family:var(--font-body);
+    min-height:100vh;
+    -webkit-font-smoothing:antialiased;
+  }
+  ::selection{background:var(--cyan); color:var(--ink);}
+  button{font-family:inherit; cursor:pointer;}
+  input,textarea,select{font-family:inherit;}
+  a{color:var(--cyan);}
+  ::-webkit-scrollbar{width:10px; height:10px;}
+  ::-webkit-scrollbar-track{background:transparent;}
+  ::-webkit-scrollbar-thumb{background:var(--ink-4); border-radius:6px;}
+
+  .crosshair{position:relative;}
+  .crosshair::before,.crosshair::after{
+    content:''; position:absolute; width:14px; height:14px; pointer-events:none;
+  }
+  .crosshair::before{top:-1px; left:-1px; border-top:2px solid var(--cyan-dim); border-left:2px solid var(--cyan-dim);}
+  .crosshair::after{bottom:-1px; right:-1px; border-bottom:2px solid var(--cyan-dim); border-right:2px solid var(--cyan-dim);}
+
+  /* ---------- LOGIN ---------- */
+  #login-screen{
+    min-height:100vh; display:flex; align-items:center; justify-content:center; padding:24px;
+  }
+  .login-panel{
+    width:100%; max-width:440px; background:var(--ink-2); border:1px solid var(--line-soft-2);
+    padding:40px 36px 32px; position:relative;
+  }
+  .login-eyebrow{
+    font-family:var(--font-display); font-size:11px; letter-spacing:.18em; color:var(--cyan-dim);
+    text-transform:uppercase; display:flex; align-items:center; gap:10px; margin-bottom:18px;
+  }
+  .login-eyebrow::after{content:''; flex:1; height:1px; background:var(--line-soft-2);}
+  .login-title{
+    font-family:var(--font-display); font-size:28px; line-height:1.2; margin:0 0 8px; color:var(--paper);
+    letter-spacing:-0.01em;
+  }
+  .login-sub{color:var(--paper-dim); font-size:14px; line-height:1.6; margin:0 0 30px;}
+  .field{margin-bottom:18px;}
+  .field label{
+    display:block; font-family:var(--font-display); font-size:10px; letter-spacing:.14em; text-transform:uppercase;
+    color:var(--cyan-dim); margin-bottom:8px;
+  }
+  .field input, .field select{
+    width:100%; background:var(--ink); border:1px solid var(--line-soft-2); color:var(--paper);
+    padding:12px 14px; font-size:14px; outline:none; transition:border-color .15s;
+  }
+  .field input:focus, .field select:focus{border-color:var(--cyan);}
+  .role-toggle{display:flex; gap:10px;}
+  .role-btn{
+    flex:1; background:var(--ink); border:1px solid var(--line-soft-2); color:var(--paper-dim);
+    padding:12px 10px; font-size:13px; font-weight:600; text-align:center; transition:all .15s;
+  }
+  .role-btn.active{border-color:var(--cyan); color:var(--cyan); background:rgba(127,209,222,0.08);}
+  .role-hint{font-size:12px; color:var(--paper-dim); margin-top:8px; line-height:1.5;}
+  .btn-primary{
+    width:100%; background:var(--cyan); color:var(--ink); border:none; padding:14px; font-size:14px;
+    font-weight:700; font-family:var(--font-display); letter-spacing:.04em; text-transform:uppercase;
+    margin-top:8px; transition:opacity .15s;
+  }
+  .btn-primary:hover{opacity:.88;}
+  .btn-primary:disabled{opacity:.4; cursor:not-allowed;}
+  .login-footnote{margin-top:22px; font-size:11px; color:var(--paper-dim); line-height:1.6; border-top:1px dashed var(--line-soft-2); padding-top:16px;}
+
+  /* ---------- APP SHELL ---------- */
+  #app{display:none; min-height:100vh; grid-template-columns:260px 1fr;}
+  #app.active{display:grid;}
+  @media (max-width:860px){ #app.active{grid-template-columns:1fr; grid-template-rows:auto auto 1fr;} }
+
+  .topbar{
+    grid-column:1/-1; display:flex; align-items:center; justify-content:space-between;
+    padding:16px 28px; border-bottom:1px solid var(--line-soft-2); background:rgba(10,27,42,0.85); backdrop-filter:blur(6px);
+    position:sticky; top:0; z-index:20;
+  }
+  .brand{display:flex; align-items:center; gap:12px;}
+  .brand-mark{width:34px; height:34px; border:1.5px solid var(--cyan); display:flex; align-items:center; justify-content:center; font-family:var(--font-display); font-weight:700; color:var(--cyan); font-size:13px;}
+  .brand-text .t1{font-family:var(--font-display); font-size:15px; color:var(--paper); letter-spacing:.02em;}
+  .brand-text .t2{font-size:11px; color:var(--paper-dim); letter-spacing:.05em;}
+  .topbar-right{display:flex; align-items:center; gap:14px;}
+  .user-chip{display:flex; align-items:center; gap:10px; font-size:13px; color:var(--paper-dim);}
+  .user-chip .badge{font-family:var(--font-display); font-size:10px; padding:3px 8px; border:1px solid var(--line-soft-2); color:var(--amber); letter-spacing:.06em;}
+  .user-chip .badge.admin{color:var(--amber); border-color:rgba(232,163,61,.4);}
+  .user-chip .badge.viewer{color:var(--cyan-dim); border-color:var(--line-soft-2);}
+  .logout-btn{background:none; border:1px solid var(--line-soft-2); color:var(--paper-dim); padding:8px 14px; font-size:12px; transition:all .15s;}
+  .logout-btn:hover{border-color:var(--coral); color:var(--coral);}
+
+  .sidebar{
+    border-right:1px solid var(--line-soft-2); padding:22px 16px; display:flex; flex-direction:column; gap:4px;
+  }
+  @media (max-width:860px){ .sidebar{border-right:none; border-bottom:1px solid var(--line-soft-2); flex-direction:row; overflow-x:auto; padding:14px 16px;} }
+  .sidebar-label{font-family:var(--font-display); font-size:10px; letter-spacing:.16em; text-transform:uppercase; color:var(--cyan-dim); padding:0 10px 10px;}
+  .cat-item{
+    display:flex; align-items:center; gap:10px; padding:11px 10px; border:1px solid transparent; color:var(--paper-dim);
+    font-size:13.5px; font-weight:500; white-space:nowrap; transition:all .15s; position:relative;
+  }
+  .cat-item:hover{background:rgba(127,209,222,0.06); color:var(--paper);}
+  .cat-item.active{background:rgba(127,209,222,0.1); border-color:var(--line-soft-2); color:var(--cyan);}
+  .cat-item.active::before{content:''; position:absolute; left:-16px; top:0; bottom:0; width:2px; background:var(--cyan);}
+  @media (max-width:860px){ .cat-item.active::before{display:none;} }
+  .cat-code{font-family:var(--font-display); font-size:10px; color:var(--cyan-dim); border:1px solid var(--line-soft-2); padding:2px 5px; min-width:34px; text-align:center;}
+  .cat-count{margin-left:auto; font-family:var(--font-display); font-size:10px; color:var(--paper-dim);}
+  .add-cat-btn{
+    margin-top:14px; background:none; border:1px dashed var(--line-soft-2); color:var(--cyan-dim);
+    padding:10px; font-size:12px; letter-spacing:.03em; text-align:left; transition:all .15s;
+  }
+  .add-cat-btn:hover{border-color:var(--cyan); color:var(--cyan);}
+
+  .main{padding:28px 32px 60px;}
+  @media (max-width:860px){ .main{padding:20px 16px 48px;} }
+  .main-header{display:flex; align-items:flex-end; justify-content:space-between; margin-bottom:22px; flex-wrap:wrap; gap:14px;}
+  .main-title{font-family:var(--font-display); font-size:24px; color:var(--paper); margin:0 0 6px;}
+  .main-desc{color:var(--paper-dim); font-size:13.5px; max-width:640px; line-height:1.6; margin:0;}
+  .btn-add-item{
+    background:var(--ink-2); border:1px solid var(--cyan); color:var(--cyan); padding:11px 18px; font-size:12.5px;
+    font-family:var(--font-display); letter-spacing:.04em; text-transform:uppercase; white-space:nowrap; transition:all .15s;
+  }
+  .btn-add-item:hover{background:var(--cyan); color:var(--ink);}
+
+  .grid{display:grid; grid-template-columns:repeat(auto-fill, minmax(270px,1fr)); gap:16px;}
+  .card{
+    background:var(--ink-2); border:1px solid var(--line-soft-2); padding:20px; cursor:pointer; transition:all .15s;
+    display:flex; flex-direction:column; gap:10px; position:relative;
+  }
+  .card:hover{border-color:var(--cyan); transform:translateY(-2px);}
+  .card-top{display:flex; align-items:center; justify-content:space-between;}
+  .card-code{font-family:var(--font-display); font-size:10px; color:var(--cyan-dim); letter-spacing:.05em;}
+  .card-video-dot{width:7px; height:7px; border-radius:50%; background:var(--amber);}
+  .card-title{font-family:var(--font-display); font-size:15px; color:var(--paper); line-height:1.4; margin:0;}
+  .card-summary{font-size:13px; color:var(--paper-dim); line-height:1.6; margin:0; flex:1;}
+  .card-meta{display:flex; align-items:center; justify-content:space-between; font-size:11px; color:var(--paper-dim); border-top:1px dashed var(--line-soft-2); padding-top:10px; margin-top:2px;}
+  .card-progress{font-family:var(--font-display); color:var(--green);}
+  .empty-state{border:1px dashed var(--line-soft-2); padding:48px 24px; text-align:center; color:var(--paper-dim); font-size:13.5px;}
+
+  /* ---------- DETAIL DRAWER ---------- */
+  .overlay{position:fixed; inset:0; background:rgba(6,15,24,0.72); backdrop-filter:blur(2px); z-index:50; display:none; align-items:stretch; justify-content:flex-end;}
+  .overlay.active{display:flex;}
+  .drawer{width:min(680px,100%); background:var(--ink); border-left:1px solid var(--line-soft-2); overflow-y:auto; padding:0;}
+  .drawer-head{padding:24px 30px; border-bottom:1px solid var(--line-soft-2); display:flex; align-items:flex-start; justify-content:space-between; gap:16px; position:sticky; top:0; background:var(--ink); z-index:5;}
+  .drawer-code{font-family:var(--font-display); font-size:11px; color:var(--cyan-dim); letter-spacing:.08em; margin-bottom:6px;}
+  .drawer-title{font-family:var(--font-display); font-size:21px; color:var(--paper); margin:0; line-height:1.3;}
+  .drawer-close{background:none; border:1px solid var(--line-soft-2); color:var(--paper-dim); width:34px; height:34px; flex-shrink:0; font-size:16px; line-height:1;}
+  .drawer-close:hover{border-color:var(--coral); color:var(--coral);}
+  .drawer-body{padding:26px 30px 40px;}
+  .section-label{font-family:var(--font-display); font-size:10.5px; letter-spacing:.14em; text-transform:uppercase; color:var(--cyan-dim); margin:0 0 12px; display:flex; align-items:center; gap:10px;}
+  .section-label::after{content:''; flex:1; height:1px; background:var(--line-soft-2);}
+  .explain-text{font-size:14.5px; line-height:1.75; color:var(--paper); margin:0 0 28px; white-space:pre-wrap;}
+  .video-wrap{position:relative; padding-top:56.25%; margin-bottom:28px; border:1px solid var(--line-soft-2); background:var(--ink-2);}
+  .video-wrap iframe{position:absolute; inset:0; width:100%; height:100%; border:0;}
+  .checklist{list-style:none; margin:0 0 28px; padding:0; display:flex; flex-direction:column; gap:8px;}
+  .check-row{display:flex; align-items:flex-start; gap:12px; padding:12px 14px; border:1px solid var(--line-soft-2); background:var(--ink-2); transition:all .15s;}
+  .check-row.done{border-color:rgba(111,191,139,.4); background:rgba(111,191,139,.06);}
+  .check-box{width:18px; height:18px; border:1.5px solid var(--cyan-dim); flex-shrink:0; margin-top:1px; display:flex; align-items:center; justify-content:center; transition:all .15s;}
+  .check-row.done .check-box{background:var(--green); border-color:var(--green);}
+  .check-box svg{width:11px; height:11px; opacity:0; transition:opacity .1s;}
+  .check-row.done .check-box svg{opacity:1;}
+  .check-text{font-size:13.5px; line-height:1.55; color:var(--paper);}
+  .check-row.done .check-text{color:var(--paper-dim); text-decoration:line-through; text-decoration-color:rgba(159,185,196,.5);}
+  .progress-bar-outer{height:5px; background:var(--ink-2); border:1px solid var(--line-soft-2); margin-bottom:28px; overflow:hidden;}
+  .progress-bar-inner{height:100%; background:var(--green); transition:width .2s;}
+  .titleblock{border:1px solid var(--line-soft-2); padding:14px 16px; display:grid; grid-template-columns:1fr 1fr; gap:10px 20px; font-family:var(--font-display); font-size:10.5px; color:var(--paper-dim);}
+  .titleblock b{color:var(--paper); display:block; font-size:11.5px; margin-top:2px;}
+  .drawer-admin-actions{display:flex; gap:10px; margin-top:24px;}
+  .btn-ghost{background:none; border:1px solid var(--line-soft-2); color:var(--paper-dim); padding:9px 16px; font-size:12px; font-family:var(--font-display);}
+  .btn-ghost:hover{border-color:var(--cyan); color:var(--cyan);}
+  .btn-danger{background:none; border:1px solid rgba(226,102,75,.4); color:var(--coral); padding:9px 16px; font-size:12px; font-family:var(--font-display);}
+  .btn-danger:hover{background:rgba(226,102,75,.1);}
+
+  /* ---------- FORM MODAL ---------- */
+  .modal{width:min(560px,100%); background:var(--ink); border-left:1px solid var(--line-soft-2); overflow-y:auto;}
+  .form-row{margin-bottom:16px;}
+  .form-row label{display:block; font-family:var(--font-display); font-size:10px; letter-spacing:.1em; text-transform:uppercase; color:var(--cyan-dim); margin-bottom:7px;}
+  .form-row input, .form-row textarea, .form-row select{
+    width:100%; background:var(--ink-2); border:1px solid var(--line-soft-2); color:var(--paper); padding:11px 12px; font-size:13.5px; outline:none;
+  }
+  .form-row input:focus, .form-row textarea:focus, .form-row select:focus{border-color:var(--cyan);}
+  .form-row textarea{resize:vertical; min-height:90px; line-height:1.5;}
+  .form-hint{font-size:11px; color:var(--paper-dim); margin-top:6px; line-height:1.5;}
+  .checklist-input-row{display:flex; gap:8px; margin-bottom:8px;}
+  .checklist-input-row input{flex:1;}
+  .row-remove{background:none; border:1px solid var(--line-soft-2); color:var(--paper-dim); width:38px; flex-shrink:0;}
+  .row-remove:hover{border-color:var(--coral); color:var(--coral);}
+  .add-row-btn{background:none; border:1px dashed var(--line-soft-2); color:var(--cyan-dim); padding:9px; width:100%; font-size:12px;}
+  .add-row-btn:hover{border-color:var(--cyan); color:var(--cyan);}
+  .form-actions{display:flex; gap:10px; margin-top:24px;}
+  .btn-submit{flex:1; background:var(--cyan); color:var(--ink); border:none; padding:13px; font-family:var(--font-display); font-size:12.5px; letter-spacing:.04em; text-transform:uppercase;}
+  .btn-submit:hover{opacity:.88;}
+  .field-error{color:var(--coral); font-size:11.5px; margin-top:6px;}
+  .toast{position:fixed; bottom:24px; left:50%; transform:translateX(-50%); background:var(--ink-2); border:1px solid var(--cyan); color:var(--paper); padding:12px 22px; font-size:13px; z-index:100; font-family:var(--font-display); letter-spacing:.02em; opacity:0; transition:opacity .2s, transform .2s;}
+  .toast.show{opacity:1; transform:translateX(-50%) translateY(-6px);}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login-screen">
+  <div class="login-panel crosshair">
+    <div class="login-eyebrow">ACCESS PANEL</div>
+    <h1 class="login-title">Strategy Atlas</h1>
+    <p class="login-sub">A working reference across Theories, Frameworks, Models, Strategies, Methods &amp; Tools — with plain-language explanations and checklists to evaluate fit before you commit to one.</p>
+
+    <div class="field">
+      <label>Your name</label>
+      <input id="login-name" type="text" placeholder="e.g. Priya Shah" autocomplete="off">
+    </div>
+
+    <div class="field">
+      <label>Access level</label>
+      <div class="role-toggle">
+        <button type="button" class="role-btn active" data-role="viewer" id="role-viewer">Team Member</button>
+        <button type="button" class="role-btn" data-role="admin" id="role-admin">Admin / Curator</button>
+      </div>
+      <div class="role-hint" id="role-hint">Browse every entry and check off evaluation criteria as you work through them.</div>
+    </div>
+
+    <button class="btn-primary" id="login-btn">Enter Atlas</button>
+    <div class="login-footnote">This is a lightweight access gate for organizing the workspace, not a security system — anyone can pick "Admin" here. Content added by curators is shared with everyone who opens this page; your checklist progress stays private to you.</div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app">
+  <div class="topbar">
+    <div class="brand">
+      <div class="brand-mark">SA</div>
+      <div class="brand-text">
+        <div class="t1">STRATEGY ATLAS</div>
+        <div class="t2">Business model &amp; framework reference</div>
+      </div>
+    </div>
+    <div class="topbar-right">
+      <div class="user-chip"><span id="user-name-display"></span> <span class="badge" id="user-badge"></span></div>
+      <button class="logout-btn" id="logout-btn">Log out</button>
+    </div>
+  </div>
+
+  <div class="sidebar" id="sidebar">
+    <div class="sidebar-label">Catalog</div>
+    <div id="cat-list"></div>
+    <button class="add-cat-btn" id="add-cat-btn" style="display:none;">+ New category tab</button>
+  </div>
+
+  <div class="main">
+    <div class="main-header">
+      <div>
+        <h2 class="main-title" id="main-title">—</h2>
+        <p class="main-desc" id="main-desc"></p>
+      </div>
+      <button class="btn-add-item" id="add-item-btn" style="display:none;">+ Add entry</button>
+    </div>
+    <div class="grid" id="grid"></div>
+  </div>
+</div>
+
+<div class="overlay" id="overlay">
+  <div class="drawer" id="drawer-content"></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+
+  // ---------------- Data ----------------
+  var DEFAULT_CATALOG = {
+    categories: [
+      {id:'th', code:'TH', name:'Theories', desc:'Explanatory ideas about where advantage, value and strategic choice come from.'},
+      {id:'fr', code:'FR', name:'Frameworks', desc:'Structured tools for analyzing a situation before you decide.'},
+      {id:'md', code:'MD', name:'Models', desc:'Visual maps for plotting a business, portfolio or performance picture.'},
+      {id:'st', code:'ST', name:'Strategies', desc:'Deliberate, named plays for how to compete and grow.'},
+      {id:'mt', code:'MT', name:'Methods', desc:'Repeatable techniques for making a defensible decision.'},
+      {id:'tl', code:'TL', name:'Tools', desc:'Software used to do the analysis, not just talk about it.'}
+    ],
+    items: [
+      {id:'th-1', categoryId:'th', name:'Resource-Based View (RBV)', summary:'Advantage comes from resources that are valuable, rare, hard to copy.',
+        explanation:'The Resource-Based View argues sustained competitive advantage comes from the specific resources and capabilities a firm controls — not industry position alone — as long as those resources are valuable, rare, hard to imitate, and the organization is set up to exploit them. It shifts the question from "which industry to compete in" to "what do we uniquely have that others can\'t easily copy."',
+        checklist:['You can name the specific resource or capability, not just "our people" or "our culture"','It genuinely creates value for customers, not just internally','Competitors cannot acquire or replicate it within a reasonable timeframe','The organization has processes in place to actually exploit it','You have checked it is not easily substituted by a different resource'],
+        videoUrl:'', addedBy:'seed'},
+      {id:'th-2', categoryId:'th', name:'Dynamic Capabilities', summary:'The ability to sense, seize, and reconfigure as markets shift.',
+        explanation:'Where RBV explains advantage at a point in time, Dynamic Capabilities asks how a firm keeps that advantage as conditions change. It breaks the skill into three parts: sensing new opportunities and threats, seizing them by mobilizing resources, and continuously reconfiguring assets and routines so yesterday\'s strengths don\'t become tomorrow\'s blind spots.',
+        checklist:['There is a defined process for scanning the environment, not just reacting to crises','Resources can be reallocated quickly once an opportunity is confirmed','Leadership has actually retired capabilities that stopped adding value','Decision rights allow fast seizing, not stuck in approval layers','You can point to a past instance where the org reconfigured successfully'],
+        videoUrl:'', addedBy:'seed'},
+      {id:'th-3', categoryId:'th', name:'Stakeholder Theory', summary:'Create value for everyone with a stake, not only shareholders.',
+        explanation:'Stakeholder Theory holds that a company\'s obligations extend beyond shareholders to everyone with a stake in its actions — employees, customers, suppliers, communities, the environment. Decisions are judged on whether they build sustainable value across this wider group, on the premise that neglecting any one of them eventually undermines the business itself.',
+        checklist:['You have listed the stakeholder groups affected, not just investors','Trade-offs between stakeholder interests are made explicit, not hidden','At least one non-financial stakeholder concern has genuinely shaped the decision','There is a real mechanism for stakeholders to raise concerns','Long-term stakeholder trust is weighed against short-term financial gain'],
+        videoUrl:'', addedBy:'seed'},
+      {id:'th-4', categoryId:'th', name:'Game Theory', summary:'Modeling decisions where the best move depends on what others do.',
+        explanation:'Game Theory studies situations where your best move depends on what competitors, partners or regulators are likely to do — and theirs depends on you. Tools like payoff matrices and concepts like Nash equilibrium help reason through pricing wars, entry decisions and negotiations by thinking a few moves ahead instead of in isolation.',
+        checklist:['You have identified the other rational "players" and their likely objectives','Payoffs are estimated for the plausible major moves, not just your own','You have considered how the other side responds to your move, not just its first effect','The analysis accounts for repeated interactions, not just a single round','You have stress-tested the "obvious" move against a smarter counter-move'],
+        videoUrl:'', addedBy:'seed'}
+    ,
+      {id:'fr-1', categoryId:'fr', name:'PESTEL', summary:'Political, Economic, Social, Technological, Environmental, Legal.',
+        explanation:'A macro-environment scan across six external forces that shape an industry. Used before strategy or market-entry decisions to surface risks and shifts that are easy to miss when focused only on competitors and customers.',
+        checklist:['Each of the six factors has at least one specific, sourced point — not a guess','You have flagged which factors are trending in your favor vs against you','Findings are linked to a real decision, not filed as background research','Legal and regulatory risks are checked against current law, not memory','The scan is dated, since macro factors shift'],
+        videoUrl:'', addedBy:'seed'},
+      {id:'fr-2', categoryId:'fr', name:'SWOT Analysis', summary:'Strengths, Weaknesses, Opportunities, Threats.',
+        explanation:'A simple four-box audit: internal Strengths and Weaknesses versus external Opportunities and Threats. Its value comes entirely from the honesty and specificity of what goes in each box — a generic SWOT changes nothing.',
+        checklist:['Strengths and weaknesses are backed by evidence, not opinion','At least one weakness is genuinely uncomfortable to admit','Opportunities and threats come from outside the company, not wishful thinking','You have connected at least one Strength to one Opportunity as an action','The analysis leads to a decision, not just a list'],
+        videoUrl:'', addedBy:'seed'},
+      {id:'fr-3', categoryId:'fr', name:"Porter's Five Forces", summary:'Industry attractiveness via five competitive pressures.',
+        explanation:'Assesses how attractive an industry is by examining rivalry among existing competitors, the threat of new entrants, the threat of substitutes, and the bargaining power of suppliers and buyers. Strong forces squeeze profitability; weak forces leave room for margin.',
+        checklist:['Each of the five forces is rated with a reason, not just a gut feeling','You have identified the single strongest force acting on your business','Substitutes considered go beyond direct competitors','Buyer and supplier power are assessed separately, not merged','The analysis informs a specific strategic response'],
+        videoUrl:'', addedBy:'seed'},
+      {id:'fr-4', categoryId:'fr', name:'VRIO', summary:'Tests if a resource is Valuable, Rare, Inimitable, Organized to capture value.',
+        explanation:'VRIO is the practical, four-question test version of the Resource-Based View: is a resource Valuable, is it Rare, is it costly to Imitate, and is the Organization actually set up to capture the value it creates? A resource that passes all four is a genuine source of sustained advantage; failing any one downgrades it to a temporary edge at best.',
+        checklist:['You have answered all four questions explicitly, not just "yes it\'s good"','"Valuable" is tied to real customer willingness to pay, not internal pride','"Rare" is checked against actual competitors, not assumed','"Inimitable" considers both direct copying and substitution','Organizational systems are confirmed to support exploiting it'],
+        videoUrl:'', addedBy:'seed'},
+      {id:'fr-5', categoryId:'fr', name:'McKinsey 7S', summary:'Aligns Strategy, Structure, Systems, Shared Values, Skills, Style, Staff.',
+        explanation:'The 7S framework checks whether seven internal elements — Strategy, Structure, Systems, Shared Values, Skills, Style and Staff — are aligned with each other. Misalignment, like a new strategy running on an old structure, is often why well-planned changes fail to stick even when the strategy itself was sound.',
+        checklist:['Each of the 7 elements has been assessed individually, not assumed fine','You have identified at least one pair of elements that are currently misaligned','Shared Values are checked against actual behavior, not the mission statement','Structure and Systems are confirmed to support the current Strategy, not a past one','There is an owner responsible for closing the biggest misalignment found'],
+        videoUrl:'', addedBy:'seed'}
+    ,
+      {id:'md-1', categoryId:'md', name:'Ansoff Matrix', summary:'Growth options across existing/new products and existing/new markets.',
+        explanation:'Maps four growth paths on two axes — product (existing or new) and market (existing or new): market penetration, market development, product development, and diversification. Risk rises as you move away from existing products in existing markets, making growth-strategy risk explicit before committing resources.',
+        checklist:['You have placed the specific initiative in one of the four quadrants deliberately','Risk level of the chosen quadrant matches the organization\'s actual risk appetite','Resources and capabilities needed for that quadrant are honestly assessed','You have considered a lower-risk quadrant as an alternative first step','Success metrics are defined for the specific growth path chosen'],
+        videoUrl:'', addedBy:'seed'},
+      {id:'md-2', categoryId:'md', name:'BCG Matrix', summary:'Classifies units as Stars, Cash Cows, Question Marks, Dogs.',
+        explanation:'Plots business units or products on market growth rate versus relative market share, sorting them into Stars (invest), Cash Cows (harvest), Question Marks (decide), and Dogs (consider divesting). A portfolio-level tool for deciding where to allocate cash across multiple products, not a single-product strategy tool.',
+        checklist:['Market share is measured relative to the largest competitor, not in absolute terms','Market growth rate uses real industry data, not a guess','Each unit\'s quadrant placement is revisited periodically, not fixed forever','Cash generated by Cash Cows is actually being reinvested somewhere useful','Question Marks have a decision deadline, not indefinite funding'],
+        videoUrl:'', addedBy:'seed'},
+      {id:'md-3', categoryId:'md', name:'Business Model Canvas', summary:'One-page map of how the business creates value.',
+        explanation:'A nine-block visual template covering customer segments, value propositions, channels, customer relationships, revenue streams, key resources, key activities, key partners and cost structure. Forces you to see the whole business model on one page instead of buried across documents.',
+        checklist:['Every block is filled with specifics, not placeholders','Value propositions map clearly to named customer segments','Revenue streams and cost structure are both realistic, not aspirational','Key partners list includes genuine dependencies, not just nice-to-haves','The canvas gets revisited and updated, not filled in once and filed away'],
+        videoUrl:'', addedBy:'seed'},
+      {id:'md-4', categoryId:'md', name:'Balanced Scorecard', summary:'Tracks Financial, Customer, Internal Process, Learning & Growth.',
+        explanation:'Measures organizational performance across four linked perspectives — Financial, Customer, Internal Process, and Learning & Growth — instead of financial metrics alone, on the premise that today\'s financial results are the lagging output of yesterday\'s customer, process and people investments.',
+        checklist:['Each of the four perspectives has specific, measurable metrics, not vague goals','Metrics are causally linked, e.g. a Learning & Growth metric feeds a Process metric','Non-financial metrics are reviewed with the same rigor as financial ones','Targets are revisited on a fixed cadence, not set once and forgotten','The scorecard is used to inform decisions, not just reported and filed'],
+        videoUrl:'', addedBy:'seed'}
+    ,
+      {id:'st-1', categoryId:'st', name:'Cost Leadership', summary:'Win by being the lowest-cost producer in the industry.',
+        explanation:'Competes by driving costs below every rival\'s while keeping quality acceptable, using the resulting margin (or lower prices) as the advantage. Typically depends on scale, operational discipline and process efficiency, and is vulnerable to a competitor finding an even lower-cost structure.',
+        checklist:['You have quantified the actual cost gap versus your nearest competitor','The cost advantage comes from a structural source (scale, process, location), not a temporary discount','Quality remains acceptable to the target customer despite cost cuts','The advantage is defensible, not easily matched by a rival investing in scale','You are not quietly adding differentiation costs that erode the cost position'],
+        videoUrl:'', addedBy:'seed'},
+      {id:'st-2', categoryId:'st', name:'Differentiation', summary:'Win by offering something customers value and can\'t get elsewhere.',
+        explanation:'Competes by being meaningfully different — in product, service, brand or experience — in a way a defined customer segment is willing to pay a premium for. The point of difference has to be real and defensible, not a marketing claim, or customers won\'t sustain the premium.',
+        checklist:['The point of difference is something customers actually say they value','Customers are demonstrably willing to pay more for it, not just prefer it','The difference is hard for competitors to copy quickly','Cost of maintaining the differentiation is covered by the premium it earns','You have validated this with real customers, not internal assumption'],
+        videoUrl:'', addedBy:'seed'},
+      {id:'st-3', categoryId:'st', name:'Focus', summary:'Win by serving one narrow segment better than generalists can.',
+        explanation:'Narrows the target to one specific segment, niche or geography and serves it with either lower costs or stronger differentiation than broad competitors can justify for such a small market. Trades total addressable market for depth of fit with a specific customer.',
+        checklist:['The chosen segment is precisely defined, not "a subset of everyone"','The segment is large enough to sustain the business on its own','Generalist competitors have a real reason not to chase this segment','You are structurally better suited to serve this segment than they are','There is a plan for what happens if a generalist targets it anyway'],
+        videoUrl:'', addedBy:'seed'},
+      {id:'st-4', categoryId:'st', name:'Market Penetration', summary:'Sell more of the existing product to the existing market.',
+        explanation:'The lowest-risk growth strategy: increase market share of a current product in a current market through more aggressive marketing, pricing, promotions or improved distribution, without changing the product or entering new markets.',
+        checklist:['You know your current market share and realistic ceiling','The tactic has a measurable target, not just "more sales"','You have checked competitor response won\'t erase the gain, e.g. a price war','Existing customers\' purchase frequency or basket size is part of the plan too','Cost of acquiring the extra share does not exceed its value'],
+        videoUrl:'', addedBy:'seed'},
+      {id:'st-5', categoryId:'st', name:'Product Development', summary:'Sell new products to the existing market.',
+        explanation:'Growth by creating new products or significant variants for customers you already serve, leveraging existing brand trust, distribution and relationships rather than starting from zero market knowledge.',
+        checklist:['The new product solves a need your existing customers have actually expressed','You can leverage existing distribution/relationships, not build them from scratch','Development cost is justified by expected uptake from the existing base','Cannibalization of existing products has been considered','There is a clear reason existing customers would adopt this over a competitor\'s'],
+        videoUrl:'', addedBy:'seed'},
+      {id:'st-6', categoryId:'st', name:'Market Development', summary:'Sell the existing product to new markets.',
+        explanation:'Growth by taking a proven product into new geographies, segments or channels it hasn\'t reached before, betting on the product\'s strength rather than untested innovation, with the main risk being unfamiliarity with the new market.',
+        checklist:['The new market has a genuine, evidenced need for this product','You have researched local competitors, regulation and buying behavior, not assumed similarity','Distribution or entry channel into the new market is identified and viable','Any needed product adaptation cost is accounted for','Success metrics are set specific to the new market, not copied from the old one'],
+        videoUrl:'', addedBy:'seed'},
+      {id:'st-7', categoryId:'st', name:'Diversification', summary:'New products into new markets — the highest-risk growth path.',
+        explanation:'The riskiest Ansoff quadrant: launching offerings the company has never made, into markets it has never served. Can be related, leveraging some existing capability, or unrelated, a genuine bet outside current expertise — and needs the strongest justification of any growth strategy.',
+        checklist:['You have been explicit about whether this is related or unrelated diversification','There is a genuine capability or asset link, if calling it "related"','Downside/worst-case scenario has been sized and is survivable','This is not being chosen simply because other options are exhausted','Leadership has committed the sustained investment this typically requires'],
+        videoUrl:'', addedBy:'seed'}
+    ,
+      {id:'mt-1', categoryId:'mt', name:'Weighted Decision Matrix', summary:'Score options against weighted criteria to make trade-offs explicit.',
+        explanation:'List options down one side and decision criteria across the top, weight each criterion by importance, score every option against every criterion, and total it up. Forces a subjective choice into explicit, comparable parts instead of staying a gut call.',
+        checklist:['Criteria weights were agreed before scores were seen, not adjusted to fit a preferred answer','Every option is scored against every criterion, no gaps','Scoring scale is consistent and defined, e.g. 1–5 with clear anchors','The result was sanity-checked against intuition, not blindly followed','Sensitivity check: does the winner change if a weight shifts slightly?'],
+        videoUrl:'', addedBy:'seed'},
+      {id:'mt-2', categoryId:'mt', name:'MCDA (Multi-Criteria Decision Analysis)', summary:'Structured evaluation against multiple, often conflicting criteria.',
+        explanation:'A more rigorous family of techniques than a simple weighted matrix, handling decisions where criteria conflict or aren\'t easily comparable, like cost vs. safety vs. speed, using structured methods to combine them into a defensible, auditable ranking.',
+        checklist:['Criteria are genuinely independent, not overlapping or double-counting the same thing','The chosen MCDA method fits the decision type, e.g. compensatory vs non-compensatory trade-offs','Stakeholders were involved in setting criteria and weights, not just the analyst','Uncertainty or data quality behind each score is acknowledged','Results are presented transparently enough that someone else could audit them'],
+        videoUrl:'', addedBy:'seed'},
+      {id:'mt-3', categoryId:'mt', name:'Scenario Planning', summary:'Build multiple plausible futures to stress-test strategy, not predict one.',
+        explanation:'Constructs several distinct, internally consistent futures built from key uncertainties, then tests whether a strategy holds up across all of them. The goal isn\'t to guess right — it\'s to avoid a strategy that only works in one future.',
+        checklist:['Scenarios are built from genuine uncertainties, not optimistic/pessimistic variants of one story','At least 3 distinct, plausible scenarios exist','The current strategy has been pressure-tested against each scenario individually','Early warning indicators are defined so you know which scenario is unfolding','Scenarios are revisited periodically, not built once and shelved'],
+        videoUrl:'', addedBy:'seed'},
+      {id:'mt-4', categoryId:'mt', name:'Cost-Benefit Analysis', summary:'Compare total expected costs against total expected benefits.',
+        explanation:'Lists all costs and all benefits of a decision, converts them to a comparable unit (usually money, often discounted over time), and compares totals to judge whether a course of action is worth pursuing relative to alternatives, including doing nothing.',
+        checklist:['Both direct and indirect/opportunity costs are included, not just the obvious ones','Benefits are quantified where possible, with assumptions stated where they can\'t be','Time value of money is accounted for on multi-year decisions','"Do nothing" is included as a baseline comparison','Key assumptions have been stress-tested, e.g. what if benefit is 20% lower?'],
+        videoUrl:'', addedBy:'seed'}
+    ,
+      {id:'tl-1', categoryId:'tl', name:'Excel', summary:'Spreadsheet tool for calculations, models and quick analysis.',
+        explanation:'The default tool for financial models, quick data analysis, ad-hoc calculations and simple dashboards. Its flexibility is also its risk — formulas and structure live inside the file with little enforced discipline, so it suits fast, personal or small-team analysis more than large, shared, audited pipelines.',
+        checklist:['The task is small/medium scale — not millions of rows or many concurrent editors','Formulas and assumptions are documented, not buried and unlabeled','Version control is handled deliberately, not "final_v3_reallyfinal.xlsx"','Sensitive data has appropriate access controls if the file is shared','You have considered whether this should graduate to a database or BI tool as it grows'],
+        videoUrl:'', addedBy:'seed'},
+      {id:'tl-2', categoryId:'tl', name:'Power BI', summary:'Business intelligence tool for interactive dashboards and reporting.',
+        explanation:'Connects to multiple data sources to build interactive dashboards and reports that refresh automatically, letting non-technical stakeholders explore data themselves instead of waiting for a new spreadsheet each time. Sits between raw data and decision-makers who need a recurring, visual view of performance.',
+        checklist:['The report will be used repeatedly, not a one-off — otherwise a simpler tool may do','Data sources are reliable and refresh on a schedule that matches decision cadence','Access and row-level security are set correctly for who should see what','Visuals are chosen to answer specific business questions, not just look impressive','Someone owns maintaining the model as underlying data changes'],
+        videoUrl:'', addedBy:'seed'},
+      {id:'tl-3', categoryId:'tl', name:'SQL', summary:'Query language for extracting and shaping data from databases.',
+        explanation:'The standard language for retrieving, filtering, joining and aggregating data directly from databases. Learning to write queries removes the dependency on someone else pulling data for you and is usually the fastest, most precise way to answer a specific data question at scale.',
+        checklist:['You know which tables/database actually hold the data you need','Query logic is checked against a known-correct sample before trusting it at scale','Performance is considered for large tables, e.g. indexes, avoiding full scans','Write access is used carefully — read-only credentials by default where possible','Query results are validated against a sanity-check total, not taken on faith'],
+        videoUrl:'', addedBy:'seed'},
+      {id:'tl-4', categoryId:'tl', name:'Python', summary:'Programming language for data analysis, automation and modeling.',
+        explanation:'A general-purpose language with strong libraries for data analysis, automation, statistical modeling and repeatable pipelines. The step up from Excel when analysis needs to be reproducible, scaled, version-controlled, or repeated on new data without manual rework.',
+        checklist:['The task benefits from being reproducible/repeatable, not a one-time look','Code is version-controlled and documented enough for someone else to run it','Libraries and dependencies are pinned so results do not silently change over time','Output is validated against a known baseline before being trusted','There is a plan for who maintains the script after the original author moves on'],
+        videoUrl:'', addedBy:'seed'},
+      {id:'tl-5', categoryId:'tl', name:'Jira', summary:'Work-tracking tool for managing tasks, sprints and projects.',
+        explanation:'A ticket and workflow tool used to track tasks, bugs and projects through defined stages, commonly paired with Agile/Scrum ceremonies like sprints and backlogs. Its value depends entirely on the team actually keeping tickets current — a stale board is worse than no board.',
+        checklist:['Workflow stages match how the team actually works, not a generic default','Tickets are updated in real time, not batch-updated once a week','Backlog is groomed and prioritized, not an ever-growing unsorted pile','Reports/boards are actually used in team rituals, not ignored','Access and permissions match who should create/edit/close tickets'],
+        videoUrl:'', addedBy:'seed'}
+    ]
+  };
+
+  var catalog = null;
+  var currentUser = null; // {name, role}
+  var activeCategoryId = null;
+  var activeItemId = null;
+  var checklistCache = {}; // itemId -> {idx:bool}
+
+  // ---------------- Storage helpers ----------------
+  function toastMsg(msg){
+    var t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(function(){ t.classList.remove('show'); }, 2200);
+  }
+
+  async function loadCatalog(){
+    try{
+      var res = await window.storage.get('catalog', true);
+      if(res && res.value){ return JSON.parse(res.value); }
+      return JSON.parse(JSON.stringify(DEFAULT_CATALOG));
+    }catch(e){
+      return JSON.parse(JSON.stringify(DEFAULT_CATALOG));
+    }
+  }
+  async function saveCatalog(){
+    try{
+      await window.storage.set('catalog', JSON.stringify(catalog), true);
+    }catch(e){ console.error('save catalog failed', e); toastMsg('Could not save — try again'); }
+  }
+  async function loadChecklistState(itemId){
+    if(checklistCache[itemId]) return checklistCache[itemId];
+    try{
+      var res = await window.storage.get('checklist:'+itemId, false);
+      var val = res && res.value ? JSON.parse(res.value) : {};
+      checklistCache[itemId] = val;
+      return val;
+    }catch(e){
+      checklistCache[itemId] = {};
+      return {};
+    }
+  }
+  async function saveChecklistState(itemId, state){
+    checklistCache[itemId] = state;
+    try{ await window.storage.set('checklist:'+itemId, JSON.stringify(state), false); }
+    catch(e){ console.error('save checklist failed', e); }
+  }
+
+  // ---------------- YouTube helper ----------------
+  function youtubeEmbedUrl(url){
+    if(!url) return null;
+    var id = null;
+    var m = url.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|shorts\/))([a-zA-Z0-9_-]{6,})/);
+    if(m) id = m[1].split(/[?&]/)[0];
+    if(!id) return null;
+    return 'https://www.youtube.com/embed/' + id;
+  }
+
+  // ---------------- Login ----------------
+  var chosenRole = 'viewer';
+  document.getElementById('role-viewer').addEventListener('click', function(){ setRole('viewer'); });
+  document.getElementById('role-admin').addEventListener('click', function(){ setRole('admin'); });
+  function setRole(r){
+    chosenRole = r;
+    document.getElementById('role-viewer').classList.toggle('active', r==='viewer');
+    document.getElementById('role-admin').classList.toggle('active', r==='admin');
+    document.getElementById('role-hint').textContent = r==='admin'
+      ? 'Add new entries, whole new category tabs, and attach explainer videos for the team.'
+      : 'Browse every entry and check off evaluation criteria as you work through them.';
+  }
+
+  document.getElementById('login-btn').addEventListener('click', async function(){
+    var name = document.getElementById('login-name').value.trim();
+    if(!name){ document.getElementById('login-name').focus(); return; }
+    currentUser = {name: name, role: chosenRole};
+    try{ await window.storage.set('last-login', JSON.stringify(currentUser), false); }catch(e){}
+    await boot();
+  });
+  document.getElementById('login-name').addEventListener('keydown', function(e){
+    if(e.key === 'Enter') document.getElementById('login-btn').click();
+  });
+
+  document.getElementById('logout-btn').addEventListener('click', function(){
+    currentUser = null;
+    document.getElementById('app').classList.remove('active');
+    document.getElementById('login-screen').style.display = 'flex';
+  });
+
+  // ---------------- Boot ----------------
+  async function boot(){
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('app').classList.add('active');
+    document.getElementById('user-name-display').textContent = currentUser.name;
+    var badge = document.getElementById('user-badge');
+    badge.textContent = currentUser.role === 'admin' ? 'ADMIN' : 'VIEWER';
+    badge.className = 'badge ' + (currentUser.role === 'admin' ? 'admin' : 'viewer');
+    document.getElementById('add-cat-btn').style.display = currentUser.role === 'admin' ? 'block' : 'none';
+    document.getElementById('add-item-btn').style.display = currentUser.role === 'admin' ? 'inline-block' : 'none';
+
+    catalog = await loadCatalog();
+    if(!activeCategoryId) activeCategoryId = catalog.categories[0].id;
+    renderSidebar();
+    renderMain();
+  }
+
+  // ---------------- Sidebar ----------------
+  function renderSidebar(){
+    var wrap = document.getElementById('cat-list');
+    wrap.innerHTML = '';
+    catalog.categories.forEach(function(cat){
+      var count = catalog.items.filter(function(i){ return i.categoryId === cat.id; }).length;
+      var el = document.createElement('div');
+      el.className = 'cat-item' + (cat.id === activeCategoryId ? ' active' : '');
+      el.innerHTML = '<span class="cat-code">'+cat.code+'</span><span>'+escapeHtml(cat.name)+'</span><span class="cat-count">'+count+'</span>';
+      el.addEventListener('click', function(){ activeCategoryId = cat.id; renderSidebar(); renderMain(); });
+      wrap.appendChild(el);
+    });
+  }
+  document.getElementById('add-cat-btn').addEventListener('click', openAddCategoryForm);
+
+  // ---------------- Main grid ----------------
+  function renderMain(){
+    var cat = catalog.categories.find(function(c){ return c.id === activeCategoryId; });
+    document.getElementById('main-title').textContent = cat.code + ' — ' + cat.name;
+    document.getElementById('main-desc').textContent = cat.desc || '';
+    var grid = document.getElementById('grid');
+    grid.innerHTML = '';
+    var items = catalog.items.filter(function(i){ return i.categoryId === activeCategoryId; });
+    if(items.length === 0){
+      grid.innerHTML = '<div class="empty-state">No entries in this category yet.' + (currentUser.role==='admin' ? ' Use "+ Add entry" above to create the first one.' : ' Check back once a curator has added something here.') + '</div>';
+      return;
+    }
+    items.forEach(async function(item, idx){
+      var card = document.createElement('div');
+      card.className = 'card';
+      var code = cat.code + '-' + String(idx+1).padStart(2,'0');
+      card.innerHTML =
+        '<div class="card-top"><span class="card-code">'+code+'</span>' + (item.videoUrl ? '<span class="card-video-dot" title="Has video"></span>' : '') + '</div>' +
+        '<h3 class="card-title">'+escapeHtml(item.name)+'</h3>' +
+        '<p class="card-summary">'+escapeHtml(item.summary||'')+'</p>' +
+        '<div class="card-meta"><span>'+ (item.checklist||[]).length +' checklist items</span><span class="card-progress" data-progress-for="'+item.id+'"></span></div>';
+      card.addEventListener('click', function(){ openDetail(item.id); });
+      grid.appendChild(card);
+      var state = await loadChecklistState(item.id);
+      var total = (item.checklist||[]).length;
+      var done = Object.keys(state).filter(function(k){ return state[k]; }).length;
+      var progEl = card.querySelector('[data-progress-for="'+item.id+'"]');
+      if(progEl && total>0) progEl.textContent = done+'/'+total;
+    });
+  }
+  document.getElementById('add-item-btn').addEventListener('click', function(){ openAddItemForm(); });
+
+  function escapeHtml(s){
+    return String(s||'').replace(/[&<>"']/g, function(c){
+      return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
+    });
+  }
+
+  // ---------------- Detail Drawer ----------------
+  async function openDetail(itemId){
+    activeItemId = itemId;
+    var item = catalog.items.find(function(i){ return i.id === itemId; });
+    var cat = catalog.categories.find(function(c){ return c.id === item.categoryId; });
+    var idx = catalog.items.filter(function(i){ return i.categoryId === item.categoryId; }).indexOf(item);
+    var code = cat.code + '-' + String(idx+1).padStart(2,'0');
+    var state = await loadChecklistState(item.id);
+
+    var embed = youtubeEmbedUrl(item.videoUrl);
+    var videoHtml = embed ? '<div class="section-label">Video walkthrough</div><div class="video-wrap"><iframe src="'+embed+'" allowfullscreen></iframe></div>' : '';
+
+    var checklistHtml = (item.checklist||[]).map(function(text, i){
+      var done = !!state[i];
+      return '<li class="check-row'+(done?' done':'')+'" data-idx="'+i+'">' +
+        '<span class="check-box"><svg viewBox="0 0 24 24" fill="none"><path d="M4 12l6 6L20 6" stroke="'+ '#0A1B2A' +'" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></span>' +
+        '<span class="check-text">'+escapeHtml(text)+'</span></li>';
+    }).join('');
+
+    var total = (item.checklist||[]).length;
+    var done = Object.keys(state).filter(function(k){ return state[k]; }).length;
+    var pct = total>0 ? Math.round(done/total*100) : 0;
+
+    var adminActions = currentUser.role === 'admin'
+      ? '<div class="drawer-admin-actions"><button class="btn-ghost" id="edit-item-btn">Edit entry</button><button class="btn-danger" id="delete-item-btn">Delete entry</button></div>'
+      : '';
+
+    var html =
+      '<div class="drawer-head">' +
+        '<div><div class="drawer-code">'+code+' · '+escapeHtml(cat.name)+'</div><h2 class="drawer-title">'+escapeHtml(item.name)+'</h2></div>' +
+        '<button class="drawer-close" id="drawer-close">&times;</button>' +
+      '</div>' +
+      '<div class="drawer-body">' +
+        '<div class="section-label">Plain-language explanation</div>' +
+        '<p class="explain-text">'+escapeHtml(item.explanation||'No explanation added yet.')+'</p>' +
+        videoHtml +
+        '<div class="section-label">Evaluation checklist ('+done+'/'+total+')</div>' +
+        '<div class="progress-bar-outer"><div class="progress-bar-inner" style="width:'+pct+'%"></div></div>' +
+        '<ul class="checklist" id="checklist-list">' + (checklistHtml || '<div class="empty-state">No checklist items yet.</div>') + '</ul>' +
+        '<div class="section-label">Reference</div>' +
+        '<div class="titleblock">' +
+          '<div>ENTRY CODE<b>'+code+'</b></div>' +
+          '<div>CATEGORY<b>'+escapeHtml(cat.name)+'</b></div>' +
+          '<div>ADDED BY<b>'+escapeHtml(item.addedBy||'unknown')+'</b></div>' +
+          '<div>VIDEO<b>'+(item.videoUrl ? 'Attached' : 'None')+'</b></div>' +
+        '</div>' +
+        adminActions +
+      '</div>';
+
+    document.getElementById('drawer-content').innerHTML = html;
+    document.getElementById('overlay').classList.add('active');
+    document.getElementById('drawer-close').addEventListener('click', closeDrawer);
+
+    document.querySelectorAll('#checklist-list .check-row').forEach(function(row){
+      row.addEventListener('click', async function(){
+        var i = row.getAttribute('data-idx');
+        var st = await loadChecklistState(item.id);
+        st[i] = !st[i];
+        await saveChecklistState(item.id, st);
+        openDetail(item.id); // re-render for updated progress
+        renderMain();
+      });
+    });
+
+    if(currentUser.role === 'admin'){
+      document.getElementById('edit-item-btn').addEventListener('click', function(){ openAddItemForm(item); });
+      document.getElementById('delete-item-btn').addEventListener('click', async function(){
+        if(!confirm('Delete "'+item.name+'"? This cannot be undone.')) return;
+        catalog.items = catalog.items.filter(function(i){ return i.id !== item.id; });
+        await saveCatalog();
+        closeDrawer();
+        renderSidebar();
+        renderMain();
+        toastMsg('Entry deleted');
+      });
+    }
+  }
+  function closeDrawer(){ document.getElementById('overlay').classList.remove('active'); }
+  document.getElementById('overlay').addEventListener('click', function(e){ if(e.target === this) closeDrawer(); });
+
+  // ---------------- Add / Edit Category ----------------
+  function openAddCategoryForm(){
+    var html =
+      '<div class="drawer-head"><h2 class="drawer-title">New category tab</h2><button class="drawer-close" id="drawer-close">&times;</button></div>' +
+      '<div class="drawer-body">' +
+        '<div class="form-row"><label>Tab name</label><input id="f-cat-name" placeholder="e.g. Pricing Tactics"></div>' +
+        '<div class="form-row"><label>Short code (2–3 letters)</label><input id="f-cat-code" placeholder="e.g. PT" maxlength="4"></div>' +
+        '<div class="form-row"><label>One-line description</label><textarea id="f-cat-desc" placeholder="What kind of entries live in this tab?" style="min-height:60px;"></textarea></div>' +
+        '<div id="f-cat-error" class="field-error"></div>' +
+        '<div class="form-actions"><button class="btn-submit" id="f-cat-submit">Create tab</button></div>' +
+      '</div>';
+    document.getElementById('drawer-content').innerHTML = html;
+    document.getElementById('overlay').classList.add('active');
+    document.getElementById('drawer-close').addEventListener('click', closeDrawer);
+    document.getElementById('f-cat-submit').addEventListener('click', async function(){
+      var name = document.getElementById('f-cat-name').value.trim();
+      var code = document.getElementById('f-cat-code').value.trim().toUpperCase();
+      var desc = document.getElementById('f-cat-desc').value.trim();
+      if(!name || !code){
+        document.getElementById('f-cat-error').textContent = 'Name and code are both required.';
+        return;
+      }
+      var id = code.toLowerCase() + '-' + Date.now().toString(36).slice(-4);
+      catalog.categories.push({id:id, code:code, name:name, desc:desc});
+      await saveCatalog();
+      activeCategoryId = id;
+      renderSidebar();
+      renderMain();
+      closeDrawer();
+      toastMsg('Category tab created');
+    });
+  }
+
+  // ---------------- Add / Edit Item ----------------
+  function openAddItemForm(existingItem){
+    var isEdit = !!existingItem;
+    var catOptions = catalog.categories.map(function(c){
+      var sel = (existingItem && existingItem.categoryId === c.id) || (!existingItem && c.id === activeCategoryId) ? ' selected' : '';
+      return '<option value="'+c.id+'"'+sel+'>'+escapeHtml(c.name)+'</option>';
+    }).join('');
+
+    var checklistItems = existingItem ? (existingItem.checklist||[]).slice() : ['', '', ''];
+
+    var html =
+      '<div class="drawer-head"><h2 class="drawer-title">'+(isEdit ? 'Edit entry' : 'Add new entry')+'</h2><button class="drawer-close" id="drawer-close">&times;</button></div>' +
+      '<div class="drawer-body">' +
+        '<div class="form-row"><label>Category tab</label><select id="f-item-cat">'+catOptions+'</select></div>' +
+        '<div class="form-row"><label>Name</label><input id="f-item-name" placeholder="e.g. Two-Sided Marketplace" value="'+(existingItem?escapeHtml(existingItem.name):'')+'"></div>' +
+        '<div class="form-row"><label>One-line summary</label><input id="f-item-summary" placeholder="Shown on the card" value="'+(existingItem?escapeHtml(existingItem.summary||''):'')+'"></div>' +
+        '<div class="form-row"><label>Plain-language explanation</label><textarea id="f-item-explain" placeholder="Explain it the way you would to a new team member — no jargon.">'+(existingItem?escapeHtml(existingItem.explanation||''):'')+'</textarea></div>' +
+        '<div class="form-row"><label>YouTube link (optional)</label><input id="f-item-video" placeholder="https://youtube.com/watch?v=..." value="'+(existingItem?escapeHtml(existingItem.videoUrl||''):'')+'">' +
+          '<div class="form-hint">Paste any standard YouTube URL — it will be embedded automatically in the entry.</div></div>' +
+        '<div class="form-row"><label>Evaluation checklist</label><div id="f-checklist-rows"></div>' +
+          '<button type="button" class="add-row-btn" id="f-add-check-row">+ Add checklist item</button></div>' +
+        '<div id="f-item-error" class="field-error"></div>' +
+        '<div class="form-actions"><button class="btn-submit" id="f-item-submit">'+(isEdit?'Save changes':'Add entry')+'</button></div>' +
+      '</div>';
+
+    document.getElementById('drawer-content').innerHTML = html;
+    document.getElementById('overlay').classList.add('active');
+    document.getElementById('drawer-close').addEventListener('click', closeDrawer);
+
+    function renderChecklistRows(){
+      var wrap = document.getElementById('f-checklist-rows');
+      wrap.innerHTML = '';
+      checklistItems.forEach(function(val, i){
+        var row = document.createElement('div');
+        row.className = 'checklist-input-row';
+        row.innerHTML = '<input value="'+escapeHtml(val)+'" placeholder="Criterion to evaluate..." data-i="'+i+'"><button type="button" class="row-remove" data-remove="'+i+'">&times;</button>';
+        wrap.appendChild(row);
+      });
+      wrap.querySelectorAll('input').forEach(function(inp){
+        inp.addEventListener('input', function(){ checklistItems[parseInt(inp.getAttribute('data-i'))] = inp.value; });
+      });
+      wrap.querySelectorAll('[data-remove]').forEach(function(btn){
+        btn.addEventListener('click', function(){
+          checklistItems.splice(parseInt(btn.getAttribute('data-remove')), 1);
+          renderChecklistRows();
+        });
+      });
+    }
+    renderChecklistRows();
+    document.getElementById('f-add-check-row').addEventListener('click', function(){
+      checklistItems.push('');
+      renderChecklistRows();
+    });
+
+    document.getElementById('f-item-submit').addEventListener('click', async function(){
+      var name = document.getElementById('f-item-name').value.trim();
+      var summary = document.getElementById('f-item-summary').value.trim();
+      var explanation = document.getElementById('f-item-explain').value.trim();
+      var video = document.getElementById('f-item-video').value.trim();
+      var catId = document.getElementById('f-item-cat').value;
+      var cleanChecklist = checklistItems.map(function(s){ return s.trim(); }).filter(Boolean);
+
+      if(!name || !explanation){
+        document.getElementById('f-item-error').textContent = 'Name and explanation are required.';
+        return;
+      }
+      if(video && !youtubeEmbedUrl(video)){
+        document.getElementById('f-item-error').textContent = 'That video link doesn\'t look like a valid YouTube URL.';
+        return;
+      }
+
+      if(isEdit){
+        existingItem.name = name;
+        existingItem.summary = summary;
+        existingItem.explanation = explanation;
+        existingItem.videoUrl = video;
+        existingItem.categoryId = catId;
+        existingItem.checklist = cleanChecklist;
+      } else {
+        catalog.items.push({
+          id: 'item-' + Date.now().toString(36),
+          categoryId: catId,
+          name: name, summary: summary, explanation: explanation,
+          checklist: cleanChecklist, videoUrl: video, addedBy: currentUser.name
+        });
+      }
+      await saveCatalog();
+      activeCategoryId = catId;
+      renderSidebar();
+      renderMain();
+      closeDrawer();
+      toastMsg(isEdit ? 'Entry updated' : 'Entry added');
+    });
+  }
+
+  // ---------------- Prefill last login name (personal, convenience only) ----------------
+  (async function prefill(){
+    try{
+      var res = await window.storage.get('last-login', false);
+      if(res && res.value){
+        var last = JSON.parse(res.value);
+        if(last.name) document.getElementById('login-name').value = last.name;
+        if(last.role) setRole(last.role);
+      }
+    }catch(e){}
+  })();
+
+})();
+</script>
+</body>
+</html>
